@@ -23,6 +23,39 @@
 - [English](https://nezhahq.github.io/en_US/index.html)
 - [中文文档](https://nezhahq.github.io/index.html)
 
+## 自动服务器注册功能
+
+客户端连接时可以通过 gRPC metadata 传递以下可选参数来自定义服务器信息：
+
+### 支持的参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| `client_uuid` | string | 是 | 服务器唯一标识符，支持自定义字符串（1-64个字符） |
+| `client_secret` | string | 是 | 客户端认证密钥 |
+| `server_name` | string | 否 | 自定义服务器名称，如果不指定则自动生成 |
+| `server_group_name` | string | 否 | 服务器分组名称，必须是已存在的分组 |
+
+### 使用示例
+
+客户端在建立 gRPC 连接时，可以在 metadata 中传递这些参数：
+
+```go
+md := metadata.New(map[string]string{
+    "client_uuid": "my-web-server-01",
+    "client_secret": "your-secret-key", 
+    "server_name": "Web服务器-生产环境",
+    "server_group_name": "生产环境服务器",
+})
+ctx := metadata.NewOutgoingContext(context.Background(), md)
+```
+
+### 权限说明
+
+- 服务器分组：只能使用自己创建的分组，管理员可以使用任意分组
+- 服务器名称：可以自定义任意名称，不指定则自动生成
+- 如果指定的分组不存在或无权限访问，服务器注册会失败
+
 ## Contributing
 
 ### Translation
