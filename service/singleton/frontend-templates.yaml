@@ -7,9 +7,9 @@
   is_official: true
 - path: "user-dist"
   name: "Official"
-  repository: "https://github.com/hamster1963/nezha-dash-v1"
-  author: "hamster1963"
-  version: "v1.30.4"
+  repository: "https://github.com/cherrylink/nezha-dash-v1"
+  author: "cherrylink"
+  version: "v1.0.2"
   is_official: true
 - path: "nezha-ascii-dist"
   name: "Nezha-ASCII"
