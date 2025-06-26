@@ -148,14 +148,9 @@ func queryIPAPI(ip net.IP) (*APIResponse, error) {
 	// 存储到缓存
 	var asn string
 	if result.AS != "" {
-		parts := strings.SplitN(result.AS, " ", 2)
-		if len(parts) > 1 {
-			asn = parts[1]
-		} else {
-			asn = result.AS
-		}
+		asn = parseASN(result.AS)
 	} else if result.Org != "" {
-		asn = result.Org
+		asn = parseASN(result.Org)
 	}
 
 	setCachedResult(ipStr, result.CountryCode, asn)
@@ -185,18 +180,12 @@ func LookupASN(ip net.IP) (string, error) {
 	}
 
 	if result.AS != "" {
-		// ASN字段格式通常是 "AS15169 Google LLC"
-		// 我们只返回组织名称部分
-		parts := strings.SplitN(result.AS, " ", 2)
-		if len(parts) > 1 {
-			return parts[1], nil
-		}
-		return result.AS, nil
+		return parseASN(result.AS), nil
 	}
 
 	// 如果AS字段为空，尝试使用Org字段
 	if result.Org != "" {
-		return result.Org, nil
+		return parseASN(result.Org), nil
 	}
 
 	return "", fmt.Errorf("ASN information not found for IP: %s", ip.String())
@@ -216,14 +205,9 @@ func LookupBoth(ip net.IP) (countryCode, asn string, err error) {
 
 	// 获取ASN信息
 	if result.AS != "" {
-		parts := strings.SplitN(result.AS, " ", 2)
-		if len(parts) > 1 {
-			asn = parts[1]
-		} else {
-			asn = result.AS
-		}
+		asn = parseASN(result.AS)
 	} else if result.Org != "" {
-		asn = result.Org
+		asn = parseASN(result.Org)
 	}
 
 	return countryCode, asn, nil
@@ -257,4 +241,26 @@ func GetCacheStats() (total int, expired int) {
 	}
 
 	return total, expired
+}
+
+// Helper: parse ASN string, keep number + org name, remove leading "AS" if present
+func parseASN(asField string) string {
+	if asField == "" {
+		return ""
+	}
+	// 去除开头的 "AS" / "as" 前缀
+	if strings.HasPrefix(strings.ToUpper(asField), "AS") {
+		asField = strings.TrimSpace(asField[2:])
+	}
+	// 仅保留 A-Z、a-z 和空格
+	var b strings.Builder
+	for _, r := range asField {
+		if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || r == ' ' {
+			b.WriteRune(r)
+		}
+	}
+	cleaned := strings.TrimSpace(b.String())
+	// 压缩重复空格
+	cleaned = strings.Join(strings.Fields(cleaned), " ")
+	return cleaned
 }
