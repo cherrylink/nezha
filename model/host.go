@@ -175,6 +175,7 @@ func (p *IP) Join() string {
 type GeoIP struct {
 	IP          IP     `json:"ip,omitempty"`
 	CountryCode string `json:"country_code,omitempty"`
+	ASN         string `json:"asn,omitempty"` // ASN组织名称
 }
 
 func PB2GeoIP(p *pb.GeoIP) GeoIP {

@@ -169,9 +169,15 @@ func getServerStat(withPublicNote, authorized bool) ([]byte, error) {
 		servers := make([]model.StreamServer, 0, len(serverList))
 		for _, server := range serverList {
 			var countryCode string
+			var ipAddress string
+			var asnOrg string
+
 			if server.GeoIP != nil {
 				countryCode = server.GeoIP.CountryCode
+				ipAddress = server.GeoIP.IP.Join()
+				asnOrg = server.GeoIP.ASN
 			}
+
 			servers = append(servers, model.StreamServer{
 				ID:           server.ID,
 				Name:         server.Name,
@@ -180,6 +186,8 @@ func getServerStat(withPublicNote, authorized bool) ([]byte, error) {
 				Host:         utils.IfOr(authorized, server.Host, server.Host.Filter()),
 				State:        server.State,
 				CountryCode:  countryCode,
+				IPAddress:    ipAddress,
+				ASN:          asnOrg,
 				LastActive:   server.LastActive,
 			})
 		}

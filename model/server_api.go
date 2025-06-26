@@ -12,6 +12,10 @@ type StreamServer struct {
 	State       *HostState `json:"state,omitempty"`
 	CountryCode string     `json:"country_code,omitempty"`
 	LastActive  time.Time  `json:"last_active,omitempty"`
+
+	// IP和ASN信息
+	IPAddress string `json:"ip_address,omitempty"` // IP地址
+	ASN       string `json:"asn,omitempty"`        // ASN组织名称
 }
 
 type StreamServerData struct {

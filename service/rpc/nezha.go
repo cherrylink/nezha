@@ -274,6 +274,16 @@ func (s *NezhaHandler) ReportGeoIP(c context.Context, r *pb.GeoIP) (*pb.GeoIP, e
 	}
 	geoip.CountryCode = location
 
+	// 查询ASN信息
+	if netIP != nil {
+		asnOrg, err := geoipx.LookupASN(netIP)
+		if err != nil {
+			log.Printf("NEZHA>> geoip.LookupASN: %v", err)
+		} else {
+			geoip.ASN = asnOrg
+		}
+	}
+
 	// 将地区码写入到 Host
 	server.GeoIP = &geoip
 

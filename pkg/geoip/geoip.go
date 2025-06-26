@@ -30,6 +30,13 @@ type IPInfo struct {
 	ContinentName string `maxminddb:"continent_name"`
 }
 
+// ASNInfo 表示ASN信息
+type ASNInfo struct {
+	AutonomousSystemNumber       uint   `maxminddb:"autonomous_system_number" json:"autonomous_system_number"`
+	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization" json:"autonomous_system_organization"`
+	Network                      string `json:"network,omitempty"`
+}
+
 func Lookup(ip net.IP) (string, error) {
 	db, err := dbOnce()
 	if err != nil {
@@ -49,4 +56,25 @@ func Lookup(ip net.IP) (string, error) {
 	}
 
 	return "", errors.New("IP not found")
+}
+
+// LookupASN 查询IP的ASN组织名称
+func LookupASN(ip net.IP) (string, error) {
+	db, err := dbOnce()
+	if err != nil {
+		return "", err
+	}
+
+	var record ASNInfo
+	_, ok, err := db.LookupNetwork(ip, &record)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", errors.New("ASN not found for this IP")
+	}
+
+	// 只返回组织名称
+	return record.AutonomousSystemOrganization, nil
 }
