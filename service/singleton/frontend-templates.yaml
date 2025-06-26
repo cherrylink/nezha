@@ -9,7 +9,7 @@
   name: "Official"
   repository: "https://github.com/cherrylink/nezha-dash-v1"
   author: "cherrylink"
-  version: "v1.1.6"
+  version: "v1.1.7"
   is_official: true
 - path: "nezha-ascii-dist"
   name: "Nezha-ASCII"
