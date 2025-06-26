@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	petname "github.com/dustinkirkland/golang-petname"
-	"github.com/hashicorp/go-uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -49,11 +48,12 @@ func (a *authHandler) Check(ctx context.Context) (uint64, error) {
 
 	var clientUUID string
 	if value, ok := md["client_uuid"]; ok {
-		clientUUID = value[0]
+		clientUUID = strings.TrimSpace(value[0])
 	}
 
-	if _, err := uuid.ParseUUID(clientUUID); err != nil {
-		return 0, status.Error(codes.Unauthenticated, "客户端 UUID 不合法")
+	// 验证客户端标识符不为空且长度合理（1-64个字符）
+	if clientUUID == "" || len(clientUUID) > 64 {
+		return 0, status.Error(codes.Unauthenticated, "客户端标识符不合法，必须为1-64个字符")
 	}
 
 	clientID, hasID := singleton.ServerShared.UUIDToID(clientUUID)
