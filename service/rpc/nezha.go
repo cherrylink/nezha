@@ -259,29 +259,46 @@ func (s *NezhaHandler) ReportGeoIP(c context.Context, r *pb.GeoIP) (*pb.GeoIP, e
 			"")
 	}
 
-	// 根据内置数据库查询 IP 地理位置
+	// 智能查询 IP 地理位置和ASN信息 - 只在IP变化或首次连接时查询
 	var ip string
+	var location string
 	if geoip.IP.IPv6Addr != "" && (use6 || geoip.IP.IPv4Addr == "") {
 		ip = geoip.IP.IPv6Addr
 	} else {
 		ip = geoip.IP.IPv4Addr
 	}
 
-	netIP := net.ParseIP(ip)
-	location, err := geoipx.Lookup(netIP)
-	if err != nil {
-		log.Printf("NEZHA>> geoip.Lookup: %v", err)
-	}
-	geoip.CountryCode = location
+	// 检查是否需要查询API：1) 首次连接(无GeoIP数据) 2) IP地址变化
+	needQueryAPI := server.GeoIP == nil || server.GeoIP.IP != geoip.IP
 
-	// 查询ASN信息
-	if netIP != nil {
-		asnOrg, err := geoipx.LookupASN(netIP)
-		if err != nil {
-			log.Printf("NEZHA>> geoip.LookupASN: %v", err)
-		} else {
-			geoip.ASN = asnOrg
+	if needQueryAPI {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			// 使用新的LookupBoth函数同时查询国家代码和ASN信息
+			countryCode, asnOrg, err := geoipx.LookupBoth(netIP)
+			if err != nil {
+				log.Printf("NEZHA>> geoip.LookupBoth: %v", err)
+				// API查询失败时，如果有历史数据就保持不变
+				if server.GeoIP != nil {
+					geoip.CountryCode = server.GeoIP.CountryCode
+					geoip.ASN = server.GeoIP.ASN
+					location = server.GeoIP.CountryCode
+				}
+			} else {
+				log.Printf("NEZHA>> API查询成功 - IP: %s, 国家: %s, ASN: %s", ip, countryCode, asnOrg)
+				geoip.CountryCode = countryCode
+				geoip.ASN = asnOrg
+				location = countryCode
+			}
 		}
+	} else {
+		// IP未变化，复用现有数据，避免不必要的API调用
+		if server.GeoIP != nil {
+			geoip.CountryCode = server.GeoIP.CountryCode
+			geoip.ASN = server.GeoIP.ASN
+			location = server.GeoIP.CountryCode
+		}
+		log.Printf("NEZHA>> IP未变化，跳过API查询 - 复用现有数据")
 	}
 
 	// 将地区码写入到 Host
